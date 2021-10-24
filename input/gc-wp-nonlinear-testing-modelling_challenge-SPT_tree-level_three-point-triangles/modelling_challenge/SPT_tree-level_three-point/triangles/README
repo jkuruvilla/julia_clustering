@@ -1,0 +1,18 @@
+This folder contains the triangles from 0 - 160 Mpc/h with a binning of 1-2-5 Mpc/h
+
+Triangles are in increasing order:
+
+- r23 >= r13 >= r12 AND r23 < rMax
+
+Only side combination that form a closed triangles are selected
+
+The code to provide the triangle list is provided as well.
+The files have been produced launching the code in this way.
+
+python triangles.py --binSize 1 --output_file triangles_binSize_1.dat
+python triangles.py --binSize 2 --output_file triangles_binSize_2.dat
+python triangles.py --binSize 5 --output_file triangles_binSize_5.dat
+
+Please refer to documentation in triangles.py for other possibilities
+
+python triangles.py --help
