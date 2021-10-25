@@ -65,7 +65,8 @@ end
 
 pk_inter = Spline1D(wavenumber, damped_pk, k=3)
 
-rrr = collect(0.2:0.05:160)
+rrr = collect(0.5:0.1:160)
+# rrr = collect(0.2:0.1:160)
 # rrr = readdlm("rbins_anna.txt")
 # rrr = readdlm("rbins_fftlog_anna.txt")
 len_r00 = length(rrr) # 300
@@ -76,11 +77,11 @@ ulim = wavenumber[len_pk] #100
 
 corr = zeros((len_r00))
 phi = zeros((len_r00))
-phi_prime = zeros((len_r00))
+# phi_prime = zeros((len_r00))
 
 err_corr = zeros((len_r00))
 err_phi = zeros((len_r00))
-err_phi_prime = zeros((len_r00))
+# err_phi_prime = zeros((len_r00))
 
 _rrr = zeros((len_r00))
 
@@ -97,10 +98,10 @@ for i in 1:len_r00
     phi[i] = I / (2*pi^2) #* (4*pi)
     err_phi[i] = e / (2*pi^2) #* (4*pi)
 
-    f = x -> phi_prime_integrand(x, rrr[i], pk_inter)
-    I,e = hquadrature(f, llim::Real, ulim::Real, reltol=1e-10, maxevals=10^7)#, abstol=1e-8)
-    phi_prime[i] = I / (2*pi^2) #* (4*pi)
-    err_phi_prime[i] = e / (2*pi^2) #* (4*pi)
+    # f = x -> phi_prime_integrand(x, rrr[i], pk_inter)
+    # I,e = hquadrature(f, llim::Real, ulim::Real, reltol=1e-11, maxevals=10^7)#, abstol=1e-8)
+    # phi_prime[i] = I / (2*pi^2) #* (4*pi)
+    # err_phi_prime[i] = e / (2*pi^2) #* (4*pi)
 
     _rrr[i] = rrr[i]
     println(i)
@@ -110,27 +111,30 @@ xi_inter = Spline1D(_rrr, corr, k=3)
 xi_prime = derivative(xi_inter, _rrr)
 phi_inter = Spline1D(_rrr, phi, k=3)
 phi_der_inter = derivative(phi_inter, _rrr)
-phi_prime_inter = Spline1D(_rrr, phi_prime, k=3)
+#phi_prime_inter = Spline1D(_rrr, phi_prime, k=3)
 
 
 
-open("../results/Euclid/linear_correlation_julia_flagship_damped_bg.txt", "w") do io
+open("../results/Euclid/linear_correlation_julia_flagship_damped_bg_qmax10.txt", "w") do io
     writedlm(io, [_rrr, corr])
 end
 
-open("../results/Euclid/xi_prime_julia_flagship_damped_bg.txt", "w") do io
+open("../results/Euclid/xi_prime_julia_flagship_damped_bg_qmax10.txt", "w") do io
     writedlm(io, [_rrr, xi_prime])
 end
 
 
-open("../results/Euclid/phi_julia_flagship_damped_higher.txt", "w") do io
+open("../results/Euclid/phi_julia_flagship_damped_higher_qmax10.txt", "w") do io
     writedlm(io, [_rrr, phi])
 end
 
-open("../results/Euclid/phi_prime_julia_flagship_damped_higher.txt", "w") do io
-    writedlm(io, [_rrr, phi_prime, phi_der_inter])
-end
+# open("../results/Euclid/phi_prime_julia_flagship_damped_higher.txt", "w") do io
+#     writedlm(io, [_rrr, phi_prime, phi_der_inter])
+# end
 
+open("../results/Euclid/phi_prime_julia_flagship_damped_higher_qmax10.txt", "w") do io
+    writedlm(io, [_rrr, phi_der_inter])
+end
 
 tri_rr = readdlm("../input/triangles_binSize_5.dat", skipstart=1)
 _r12 = tri_rr[:,1]
@@ -147,6 +151,6 @@ for i in 1:len_r12
     bg_[i] = _precyclic + _cyclic_one + _cyclic_two
 end
 
-open("../results/Euclid/bg_julia_flagship_damped_higher.txt", "w") do io
+open("../results/Euclid/bg_julia_flagship_damped_higher_qmax10.txt", "w") do io
     writedlm(io, [_r12, _r23, _r31, bg_])
 end

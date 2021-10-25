@@ -51,7 +51,7 @@ pk = aa[:,2]
 len_pk = length(pk)
 damped_pk = zeros((len_pk))
 for i in 1:len_pk
-    damped_pk[i] = pk[i] * exp(-(wavenumber[i]/50)^2)
+    damped_pk[i] = pk[i] * exp(-(wavenumber[i]/10)^2)
 end
 
 open("../results/Euclid/damped_pk_j.txt", "w") do io
@@ -61,8 +61,8 @@ end
 
 pk_inter = Spline1D(wavenumber, damped_pk, k=3)
 
-rrr = collect(0.2:0.05:160)
-#rrr = collect(0.5:1.0:160)
+#rrr = collect(0.1:0.1:160)
+rrr = collect(0.5:1.0:160)
 # rrr = readdlm("rbins_anna.txt")
 # rrr = readdlm("rbins_fftlog_anna.txt")
 len_r00 = length(rrr) # 300
@@ -89,7 +89,7 @@ rr = 0.0
 
 for i in 1:len_r00
     f = x -> correlation_integrand(x, rrr[i], pk_inter)
-    I,e = hquadrature(f, llim::Real, ulim::Real, reltol=1e-9, maxevals=10^7)#, abstol=1e-8)
+    I,e = hquadrature(f, llim::Real, ulim::Real, reltol=1e-10, maxevals=10^7)#, abstol=1e-8)
     corr[i] = I / (2*pi^2)
     err_corr[i] = e / (2*pi^2)
 
@@ -118,21 +118,21 @@ for i in 1:len_r00
 
 end
 
-open("../results/Euclid/linear_correlation_julia_flagship_damped_higher_qmax50.txt", "w") do io
+open("../results/Euclid/linear_correlation_julia_flagship_damped_higher_qmax10.txt", "w") do io
     writedlm(io, [_rrr, corr])
 end
 
-open("../results/Euclid/eta_zero_julia_flagship_damped_higher_qmax50.txt", "w") do io
+open("../results/Euclid/eta_zero_julia_flagship_damped_higher_qmax10.txt", "w") do io
     writedlm(io, [_rrr, eta_zero])
 end
-open("../results/Euclid/eta_two_julia_flagship_damped_higher_qmax50.txt", "w") do io
+open("../results/Euclid/eta_two_julia_flagship_damped_higher_qmax10.txt", "w") do io
     writedlm(io, [_rrr, eta_two])
 end
 
 # open("epsilon_zero_julia.txt", "w") do io
 #     writedlm(io, [rrr, epsilon_zero])
 # end
-open("../results/Euclid/epsilon_two_julia_flagship_damped_higher_qmax50.txt", "w") do io
+open("../results/Euclid/epsilon_two_julia_flagship_damped_higher_qmax10.txt", "w") do io
     writedlm(io, [_rrr, epsilon_two])
 end
 
@@ -156,6 +156,6 @@ for i in 1:len_r12
     jb_[i] = _precyclic + _cyclic_one + _cyclic_two
 end
 
-open("../results/Euclid/jb_julia_flagship_damped_higher_qmax50.txt", "w") do io
+open("../results/Euclid/jb_julia_flagship_damped_higher_qmax10.txt", "w") do io
     writedlm(io, [_r12, _r23, _r31, jb_])
 end

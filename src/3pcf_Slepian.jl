@@ -65,7 +65,7 @@ end
 
 pk_inter = Spline1D(wavenumber, damped_pk, k=3)
 
-rrr = collect(0.2:0.05:160)
+rrr = collect(0.2:0.1:160)
 # rrr = readdlm("rbins_anna.txt")
 # rrr = readdlm("rbins_fftlog_anna.txt")
 len_r00 = length(rrr) # 300
@@ -119,6 +119,23 @@ xi_onem_inter = Spline1D(_rrr, corr_oneminus, k=3)
 xi_two_inter = Spline1D(_rrr, corr_two, k=3)
 
 mu = collect(-1.0:0.05:1)
+lenmu = length(mu)
+
+tri_rr = readdlm("../input/triangles_binSize_5.dat", skipstart=1)
+_r12 = tri_rr[:,1]
+_r23 = tri_rr[:,2]
+_r31 = tri_rr[:,3]
+
+lenr12_ = length(_r12)
+
+for i in 1:lenr12_
+    for j in 1:lenmu
+        rrr31 = sqrt(_r12[i]^2 + _r23[i]^2 - (2*mu[i]*_r12[i]*_r23[i]))
+
+    end
+end
+
+
 
 open("../results/Euclid/linear_correlation_julia_flagship_damped_bg.txt", "w") do io
     writedlm(io, [_rrr, corr])
@@ -137,11 +154,6 @@ open("../results/Euclid/phi_prime_julia_flagship_damped_higher.txt", "w") do io
     writedlm(io, [_rrr, phi_prime, phi_der_inter])
 end
 
-
-tri_rr = readdlm("../input/triangles_binSize_5.dat", skipstart=1)
-_r12 = tri_rr[:,1]
-_r23 = tri_rr[:,2]
-_r31 = tri_rr[:,3]
 
 len_r12 = length(_r12)
 bg_ = zeros((len_r12))
