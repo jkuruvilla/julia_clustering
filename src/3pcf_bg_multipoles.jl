@@ -1,6 +1,7 @@
 import Dierckx.Spline1D, Dierckx.evaluate, Dierckx.derivative
 import Cubature.hquadrature
 import DelimitedFiles.readdlm, DelimitedFiles.writedlm
+import LegendrePolynomials.Pl
 
 π = 3.141592653589793
 
@@ -49,6 +50,11 @@ function BarrigaGatzanaga_bu_connected(r1::Float64, r2::Float64, coschi::Float64
     return _sum
 end
 
+function zeta_multipole(mu::Float64, ell::Real, zeta_int)
+    integr = zeta_int(mu) * Pl(mu, ell)
+    return integr
+end
+
 #aa = readdlm("Linear_power_spectrum_sim.txt", skipstart=3)
 aa = readdlm("../input/flagship_linear_cb_hr_matterpower_z0p0.dat", skipstart=1)
 wavenumber = aa[:,1]
@@ -65,8 +71,8 @@ end
 
 pk_inter = Spline1D(wavenumber, damped_pk, k=3)
 
-rrr = collect(0.5:0.1:160)
-# rrr = collect(0.2:0.1:160)
+#rrr = collect(0.05:0.05:350)
+rrr = collect(0.05:0.1:350)
 # rrr = readdlm("rbins_anna.txt")
 # rrr = readdlm("rbins_fftlog_anna.txt")
 len_r00 = length(rrr) # 300
@@ -89,12 +95,12 @@ rr = 0.0
 
 for i in 1:len_r00
     f = x -> correlation_integrand(x, rrr[i], pk_inter)
-    I,e = hquadrature(f, llim::Real, ulim::Real, reltol=1e-10, maxevals=10^7)#, abstol=1e-8)
+    I,e = hquadrature(f, llim::Real, ulim::Real, reltol=1e-8, maxevals=10^7)#, abstol=1e-8)
     corr[i] = I / (2*pi^2)
     err_corr[i] = e / (2*pi^2)
 
     f = x -> phi_integrand(x, rrr[i], pk_inter)
-    I,e = hquadrature(f, llim::Real, ulim::Real, reltol=1e-10, maxevals=10^7)#, abstol=1e-8)
+    I,e = hquadrature(f, llim::Real, ulim::Real, reltol=1e-8, maxevals=10^7)#, abstol=1e-8)
     phi[i] = I / (2*pi^2) #* (4*pi)
     err_phi[i] = e / (2*pi^2) #* (4*pi)
 
@@ -104,7 +110,7 @@ for i in 1:len_r00
     # err_phi_prime[i] = e / (2*pi^2) #* (4*pi)
 
     _rrr[i] = rrr[i]
-    println(i)
+    #println(i)
 end
 
 xi_inter = Spline1D(_rrr, corr, k=3)
@@ -114,43 +120,58 @@ phi_der_inter = derivative(phi_inter, _rrr)
 #phi_prime_inter = Spline1D(_rrr, phi_prime, k=3)
 
 
-
-open("../results/Euclid/linear_correlation_julia_flagship_damped_bg_qmax10.txt", "w") do io
-    writedlm(io, [_rrr, corr])
-end
-
-open("../results/Euclid/xi_prime_julia_flagship_damped_bg_qmax10.txt", "w") do io
-    writedlm(io, [_rrr, xi_prime])
-end
-
-
-open("../results/Euclid/phi_julia_flagship_damped_higher_qmax10.txt", "w") do io
-    writedlm(io, [_rrr, phi])
-end
-
-# open("../results/Euclid/phi_prime_julia_flagship_damped_higher.txt", "w") do io
-#     writedlm(io, [_rrr, phi_prime, phi_der_inter])
-# end
-
-open("../results/Euclid/phi_prime_julia_flagship_damped_higher_qmax10.txt", "w") do io
-    writedlm(io, [_rrr, phi_der_inter])
-end
-
-tri_rr = readdlm("../input/triangles_binSize_5.dat", skipstart=1)
+tri_rr = readdlm("../input/Barriga_Gaztanaga_l0_Anna_binSize5.txt", skipstart=1)
 _r12 = tri_rr[:,1]
 _r23 = tri_rr[:,2]
-_r31 = tri_rr[:,3]
+#_r31 = tri_rr[:,3]
 
 len_r12 = length(_r12)
-bg_ = zeros((len_r12))
-for i in 1:len_r12
-    _precyclic  = BarrigaGatzanaga_connected(_r12[i], _r23[i], (_r12[i]^2+_r23[i]^2-_r31[i]^2)/(2*_r12[i]*_r23[i]), xi_inter, phi_inter)
-    _cyclic_one = BarrigaGatzanaga_connected(_r23[i], _r31[i], (_r23[i]^2+_r31[i]^2-_r12[i]^2)/(2*_r23[i]*_r31[i]), xi_inter, phi_inter)
-    _cyclic_two = BarrigaGatzanaga_connected(_r31[i], _r12[i], (_r31[i]^2+_r12[i]^2-_r23[i]^2)/(2*_r31[i]*_r12[i]), xi_inter, phi_inter)
 
-    bg_[i] = _precyclic + _cyclic_one + _cyclic_two
+_numell = 10
+len_multipoles = (len_r12 * _numell) #+ _numell
+
+println(len_multipoles)
+
+slepian_multi = zeros((len_multipoles))
+err_slepian_multi = zeros((len_multipoles))
+
+println(length(slepian_multi))
+
+for i in 1:len_r12
+    mu_min = max(-(349^2-_r12[i]^2-_r23[i]^2)/(2*_r12[i]*_r23[i]), -1)
+    mu_max = min(-(0.06^2-_r12[i]^2-_r23[i]^2)/(2*_r12[i]*_r23[i]), 1)
+    #println(mu_min, mu_max)
+    mu = collect(mu_min:0.001:mu_max)
+    lenmu = length(mu)
+    #println(lenmu)
+    llim_mu = mu[1]
+    ulim_mu = mu[lenmu]
+    println(i)
+    bg_ = zeros((lenmu))
+    for j in 1:lenmu
+        _r31 = sqrt(_r12[i]^2 + _r23[i]^2 - (2*mu[j]*_r12[i]*_r23[i]))
+        _precyclic  = BarrigaGatzanaga_connected(_r12[i], _r23[i], (_r12[i]^2+_r23[i]^2-_r31^2)/(2*_r12[i]*_r23[i]), xi_inter, phi_inter)
+        _cyclic_one = BarrigaGatzanaga_connected(_r23[i], _r31, (_r23[i]^2+_r31^2-_r12[i]^2)/(2*_r23[i]*_r31), xi_inter, phi_inter)
+        _cyclic_two = BarrigaGatzanaga_connected(_r31, _r12[i], (_r31^2+_r12[i]^2-_r23[i]^2)/(2*_r31*_r12[i]), xi_inter, phi_inter)
+
+        bg_[j] = _precyclic + _cyclic_one + _cyclic_two
+    end
+    bg_integrand = Spline1D(mu, bg_, k=3)
+
+    for k in 1:_numell
+        _ell = k-1
+
+        f = x -> zeta_multipole(x, _ell, bg_integrand)
+        I,e = hquadrature(f, llim_mu::Real, ulim_mu::Real, reltol=1e-8, maxevals=10^7)#, abstol=1e-8)
+
+        _idx = (i-1)*_numell + k
+
+        slepian_multi[_idx] = I * (2*_ell +1)/2
+        err_slepian_multi[_idx] = e * (2*_ell+1)/2
+    end
 end
 
-open("../results/Euclid/BarrigaGaztanaga_Joseph_binsize5.txt", "w") do io
-    writedlm(io, [_r12, _r23, _r31, bg_])
+open("../results/Euclid/BarrigaGaztanaga_Joseph_binsize5_multipoles_new.txt", "w") do io
+#    writedlm(io, [_r12, _r23, slepian_multi])
+    writedlm(io, [slepian_multi])
 end

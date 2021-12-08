@@ -156,6 +156,6 @@ for i in 1:len_r12
     jb_[i] = _precyclic + _cyclic_one + _cyclic_two
 end
 
-open("../results/Euclid/jb_julia_flagship_damped_higher_qmax10.txt", "w") do io
+open("../results/Euclid/JingBorner_Joseph_binsize5.txt", "w") do io
     writedlm(io, [_r12, _r23, _r31, jb_])
 end
