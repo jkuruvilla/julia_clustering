@@ -1,7 +1,7 @@
 import Dierckx.Spline1D, Dierckx.evaluate
 import Cubature.hquadrature
 #import Plots.plot, Plots.savefig, Plots.plot!
-import DelimitedFiles.readdlm
+import DelimitedFiles.readdlm, DelimitedFiles.writedlm
 
 using CPUTime
 
@@ -14,9 +14,17 @@ function correlation_integrand(kk::Float64, rr::Float64, pk_int)
     return integr
 end
 
-aa = readdlm("Linear_power_spectrum_Planck15_Anna.txt", skipstart=3)
-wavenumber = aa[:,1]
-pk = aa[:,2]
+#aa = readdlm("Linear_power_spectrum_Planck15_Anna.txt", skipstart=3)
+#wavenumber = aa[:,1]
+#pk = aa[:,2]
+
+aa = readdlm("../input/PowerSpectrumDataMehdi.txt", skipstart=2)
+wavenumber = aa[:,2]
+pk = aa[:,1]
+
+aa = readdlm("../input/CorrelationFunctionMehdi.txt", skipstart=2)
+r = aa[:,2]
+xiii = aa[:,1]
 
 #plot(wavenumber, pk)
 
@@ -24,7 +32,7 @@ len_pk = length(pk)
 
 pk_inter = Spline1D(wavenumber, pk, k=3)
 
-rrr = collect(0.1:0.5:140.1)
+rrr = r #collect(0.1:0.5:140.1)
 len_r00 = length(rrr)
 
 
@@ -39,10 +47,15 @@ for i in 1:len_r00
 end
 CPUtoc()
 
-corr_r2 = zeros((len_r00))
-for i in 1:len_r00
-   corr_r2[i] = rrr[i]^2 * corr[i]
+
+open("../results/CF_forMehdi.txt", "w") do io
+    writedlm(io, [rrr, corr])
 end
+
+# corr_r2 = zeros((len_r00))
+# for i in 1:len_r00
+#    corr_r2[i] = rrr[i]^2 * corr[i]
+# end
 
 #plot(rrr, corr_r2, label="ξ", xlabel="r", ylabel="r^2 ξ")
 #savefig("sim_corr.pdf")
